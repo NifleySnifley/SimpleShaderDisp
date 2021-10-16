@@ -68,6 +68,8 @@
         "future": "cpp",
         "csignal": "cpp",
         "map": "cpp",
-        "inotify.h": "c"
+        "inotify.h": "c",
+        "variant": "cpp"
     },
+    "C_Cpp.default.configurationProvider": "ms-vscode.makefile-tools",
 }

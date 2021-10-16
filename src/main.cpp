@@ -22,34 +22,36 @@
 
 // Max buffer length
 static const size_t BUF_LEN(10 * (sizeof(struct inotify_event) + NAME_MAX + 1));
+
+// SFML Window size (iResolution)
 static sf::Vector2u winSize(800, 800);
 
-// A file that is watched for changes and hot-reloaded for live viewing
-static std::filesystem::path watchedFile;
-static int inot_instance, watch_handle;
+// INotify file handle
+static int inot_instance;
 
 // Set this to true to make the file watcher thread exit
 static std::atomic<bool> watcherShouldExit = false;
 
-struct shaderinfo {
-    sf::Shader* shader;
-    std::filesystem::path path;
-};
+typedef std::shared_ptr<sf::Shader> ShaderResource;
+typedef std::shared_ptr<sf::Texture> TextureResource;
+typedef std::variant<ShaderResource, TextureResource> Resource;
+//typedef sf::Shader* Resource;
 
 struct channelinfo {
-    std::variant<sf::Shader*, sf::Texture*> input;
+    Resource input;
     std::filesystem::path path;
 
     // Flags
-    bool autoReload : 1;
-}
+    bool autoReload : 1 = true;
+};
 
 // Maps watch handle to shader pointer
 // TODO: Mutex/Semaphore
-auto shaderWatches = std::map<int, shaderinfo>();
+// auto shaderWatches = std::map<int, shaderinfo>();
+auto reloadWatches = std::map<int, channelinfo*>(); // Points to the channelinfo in a vector of channels
+static std::filesystem::path mainShaderFile;
 
-
-// Done: Use poll() instead of read and make the thread exit properly
+// DONE: Use poll() instead of read and make the thread exit properly
 void shaderWatcherThread() {
     ssize_t numRead;
     char* p;
@@ -80,20 +82,42 @@ void shaderWatcherThread() {
             std::cout << "File " << event->wd << " changed... Reloading" << std::endl;
             // displayInotifyEvent(event);
 
-            // Load the shader changed from the map of shader information
-            if (shaderWatches.contains(event->wd))
-                shaderWatches[event->wd].shader->loadFromFile(shaderWatches[event->wd].path.string(), sf::Shader::Fragment);
+
+
+            // Load the shader changed from the map of shader information, check if its meant to be reloaded
+            if (reloadWatches.contains(event->wd) && reloadWatches[event->wd]->autoReload) {
+                // Contains a shader
+                switch (reloadWatches[event->wd]->input.index()) {
+                    case 0:
+                        // Load the shader from file
+                        std::get<ShaderResource>(reloadWatches[event->wd]->input)
+                            ->loadFromFile(reloadWatches[event->wd]->path.string(), sf::Shader::Fragment);
+                        break;
+
+                    case 1:
+                        std::get<TextureResource>(reloadWatches[event->wd]->input)
+                            ->loadFromFile(reloadWatches[event->wd]->path.string());
+                        break;
+
+                    default: break;
+                }
+            }
+
+
+            //.shader->loadFromFile(shaderWatches[event->wd].path.string(), sf::Shader::Fragment);
             p += sizeof(inotify_event) + event->len;
         }
     }
 }
 
+
+
 /// Add a shader change watch that can be monitored by the worker thread, 
 /// @returns the inotify handle for the watch
-int addShaderWatch(std::filesystem::path file, sf::Shader* shader) {
+int addResourceWatch(std::filesystem::path file, Resource r) {
     int handle = inotify_add_watch(inot_instance, file.string().c_str(), IN_CLOSE_WRITE); // Get a watcher handle
-    struct shaderinfo si = { shader, file }; // Make a pair of the shader and file
-    shaderWatches.emplace(handle, si);  // Add it to the map for access by the thread
+    channelinfo ci = { r, file }; // Make a pair of the shader and file
+    reloadWatches.emplace(handle, &ci);  // Add it to the map for access by the thread
 
     return handle;
 }
@@ -111,17 +135,22 @@ int main(int argc, char const* argv[]) {
         return 1;
     }
 
-    watchedFile = std::filesystem::absolute(
+    mainShaderFile = std::filesystem::absolute(
         std::filesystem::path(argv[1])
     );
 
-    auto iChannels = std::vector<sf::Texture>();
+    auto iChannels = std::vector<channelinfo>();
     for (int ti = 2; ti < argc; ++ti) {
         if (std::filesystem::exists(argv[ti])) {
-            sf::Texture tex;
-            tex.loadFromFile(argv[ti]);
-            tex.generateMipmap();
-            iChannels.push_back(tex);
+            TextureResource tex = std::make_shared<sf::Texture>();
+            tex->loadFromFile(argv[ti]);
+            tex->generateMipmap();
+            struct channelinfo ci = {
+                tex,
+                std::filesystem::path(argv[ti]),
+                true
+            };
+            iChannels.push_back(ci);
         }
     }
 
@@ -131,23 +160,24 @@ int main(int argc, char const* argv[]) {
     // Setup inotify
     inot_instance = inotify_init();
     assert(inot_instance != -1);
-    //watch_handle = inotify_add_watch(inot_instance, watchedFile.string().c_str(), IN_CLOSE_WRITE);
+    //watch_handle = inotify_add_watch(inot_instance, mainShaderFile.string().c_str(), IN_CLOSE_WRITE);
     //std::cout << "Watch handle is " << watch_handle << std::endl;
 
     sf::RenderWindow window = sf::RenderWindow(sf::VideoMode(winSize.x, winSize.y), "Simple shader display");
     window.setView(sf::View(sf::FloatRect(0.0, 0.0, 1.0, 1.0)));
 
     // Main shader for the program
-    sf::Shader mainShader = sf::Shader();
-    mainShader.loadFromFile(watchedFile.string(), sf::Shader::Fragment);
+    ShaderResource mainShader = std::make_shared<sf::Shader>(); // = sf::Shader();
+    mainShader->loadFromFile(mainShaderFile.string(), sf::Shader::Fragment);
 
     // This thread polls for inotify events and in turn, watches for file changes
     std::thread watcherThread = std::thread(&shaderWatcherThread);
-    addShaderWatch(watchedFile, &mainShader);
-
+    addResourceWatch(mainShaderFile, mainShader);
 
     // Fullscreen quad
     sf::RectangleShape rect = sf::RectangleShape(sf::Vector2f(winSize));
+
+    auto channel_textures = std::vector<sf::RenderTexture>();
 
     /*
      * Shader Inputs
@@ -163,35 +193,45 @@ int main(int argc, char const* argv[]) {
      * uniform float     iSampleRate;           // sound sample rate (i.e., 44100)
     */
 
-
     // Frame count and deltaTime
     int frameCounter = 0;
     sf::Clock deltaClock;
     sf::Clock appClock;
 
+    // Main render loop
     while (window.isOpen()) {
         sf::Event event;
         while (window.pollEvent(event)) {
             if (event.type == sf::Event::Closed) window.close();
             if (event.type == sf::Event::Resized) {
                 winSize = sf::Vector2u(event.size.width, event.size.height);
-                mainShader.setUniform("iResolution", sf::Vector2f(winSize));
+                mainShader->setUniform("iResolution", sf::Vector2f(winSize));
             }
         }
 
-        mainShader.setUniform("iResolution", sf::Vector2f(winSize));
-        mainShader.setUniform("iFrame", frameCounter++);
-        mainShader.setUniform("iTimeDelta", deltaClock.restart().asSeconds());
-        mainShader.setUniform("iTime", appClock.getElapsedTime().asSeconds());
+        // Set global uniforms
+        mainShader->setUniform("iResolution", sf::Vector2f(winSize));
+        mainShader->setUniform("iFrame", frameCounter++);
+        mainShader->setUniform("iTimeDelta", deltaClock.restart().asSeconds());
+        mainShader->setUniform("iTime", appClock.getElapsedTime().asSeconds());
 
+
+
+        // Set the channel values
         for (int i = 0; i < iChannels.size(); ++i) {
-            mainShader.setUniform("iChannel" + std::to_string(i), iChannels[i]);
+            switch (iChannels[i].input.index()) {
+                case 1: // Texture
+                    mainShader->setUniform("iChannel" + std::to_string(i), *std::get<TextureResource>(iChannels[i].input));
+                    break;
+                default: break;
+            }
         }
 
         // Clear color
         window.clear(sf::Color::White);
 
-        window.draw(rect, &mainShader);
+        // Render the fullscreen quad
+        window.draw(rect, mainShader.get());
 
         // Update framebuffer
         window.display();

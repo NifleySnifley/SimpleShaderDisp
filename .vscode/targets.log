@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Fri Oct 15 18:48:09 2021
+# Make data base, printed on Sat Oct 16 17:19:19 2021
 
 # Variables
 
@@ -21,7 +21,7 @@ SNAP_INSTANCE_KEY =
 # environment
 I3SOCK = /run/user/1000/i3/ipc-socket.2646
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-403be032-088a-4edd-bbb4-1894cb8f6f58.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-0f0780d1-10f1-4189-b855-6aa2394c4385.sock
 # environment
 MANDATORY_PATH = /usr/share/gconf/regolith.mandatory.path
 # environment
@@ -34,6 +34,8 @@ MAKE_COMMAND := make
 GTK3_MODULES = xapp-gtk3-module
 # environment
 QT_ACCESSIBILITY = 1
+# environment
+GOPATH = /home/nifley/go
 # automatic
 @D = $(patsubst %/,%,$(dir $@))
 # environment
@@ -205,11 +207,13 @@ GIO_LAUNCHED_DESKTOP_FILE_PID = 2576
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # makefile (from 'Makefile', line 1)
-CFLAGS = -std=c++20
+CFLAGS = -std=c++20 -g
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
 GDK_PIXBUF_MODULE_FILE = /home/nifley/snap/code/common/.cache/gdk-pixbuf-loaders.cache
+# environment
+GOMODCACHE = /home/nifley/go/pkg/mod
 # environment
 VISUAL = vim
 # environment
@@ -230,6 +234,8 @@ TERM = xterm-256color
 SNAP_NAME = code
 # environment
 GSETTINGS_SCHEMA_DIR = /snap/code/77/usr/share/glib-2.0/schemas
+# environment
+GOPROXY = https://proxy.golang.org,direct
 # default
 .RECIPEPREFIX := 
 # automatic
@@ -257,7 +263,7 @@ GDMSESSION = regolith
 # environment
 SNAP_LIBRARY_PATH = /var/lib/snapd/lib/gl:/var/lib/snapd/lib/gl32:/var/lib/snapd/void
 # variable set hash-table stats:
-# Load=123/1024=12%, Rehash=0, Collisions=7/153=5%
+# Load=126/1024=12%, Rehash=0, Collisions=7/156=4%
 
 # Pattern-specific Variable Values
 
@@ -265,9 +271,9 @@ SNAP_LIBRARY_PATH = /var/lib/snapd/lib/gl:/var/lib/snapd/lib/gl32:/var/lib/snapd
 
 # Directories
 
-# . (device 2065, inode 1362): 8 files, no impossibilities.
+# . (device 2065, inode 1362): 9 files, no impossibilities.
 
-# 8 files, no impossibilities in 1 directories.
+# 9 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
@@ -278,14 +284,14 @@ SNAP_LIBRARY_PATH = /var/lib/snapd/lib/gl:/var/lib/snapd/lib/gl32:/var/lib/snapd
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
- 
-make: *** No rule to make target 'all'.  Stop.
- 
-#  Last modified 2021-10-14 22:03:41.87
+#  Last modified 2021-10-16 17:18:47.36
 #  File has been updated.
 #  Successfully updated.
 
 # Not a target:
+ 
+make: *** No rule to make target 'all'.  Stop.
+ 
 src/main.cpp:
 #  Implicit rule search has not been done.
 #  Modification time never checked.
@@ -340,12 +346,12 @@ test: swatch
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 17 / storage = 139 B / avg = 8 B
-# current buf: size = 8162 B / used = 139 B / count = 17 / avg = 8 B
+# strcache buffers: 1 (0) / strings = 18 / storage = 144 B / avg = 8 B
+# current buf: size = 8162 B / used = 144 B / count = 18 / avg = 8 B
 
-# strcache performance: lookups = 29 / hit rate = 41%
+# strcache performance: lookups = 30 / hit rate = 40%
 # hash-table stats:
-# Load=17/8192=0%, Rehash=0, Collisions=0/29=0%
-# Finished Make data base on Fri Oct 15 18:48:09 2021
+# Load=18/8192=0%, Rehash=0, Collisions=0/30=0%
+# Finished Make data base on Sat Oct 16 17:19:19 2021
 
  

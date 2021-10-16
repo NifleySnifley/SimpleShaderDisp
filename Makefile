@@ -1,4 +1,4 @@
-CFLAGS = -std=c++20
+CFLAGS = -std=c++20 -g
 LDFLAGS = -I./include -L./usr/local/include/SDL2 -lpthread -lsfml-graphics -lsfml-window -lsfml-system
 
 .PHONY: test clean
