@@ -4,10 +4,10 @@ LDFLAGS = -I./include -L./usr/local/include/SDL2 -lpthread -lsfml-graphics -lsfm
 .PHONY: test clean
 
 test: swatch
-	./swatch ./test.glsl ./test.jpeg
+	./swatch ./test2.glsl ./test.glsl ./test.jpeg
 
 clean:
-	rm -f ssdisp
+	rm -f swatch
 
 swatch: src/main.cpp
 	clang++ $(CFLAGS) -o swatch ./src/main.cpp $(LDFLAGS)

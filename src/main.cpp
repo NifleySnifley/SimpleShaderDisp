@@ -1,3 +1,4 @@
+#pragma region includes
 #include <iostream>
 #include <filesystem>
 #include <fstream>
@@ -19,14 +20,15 @@
 // Graphics and other includes
 #include "SFML/Graphics.hpp"
 #include "utils.h"
+#pragma endregion
 
-// Max buffer length
+// Buffer length for reading inotify events
 static const size_t BUF_LEN(10 * (sizeof(struct inotify_event) + NAME_MAX + 1));
 
-// SFML Window size (iResolution)
+// SFML Window size (iResolution), updated when resized
 static sf::Vector2u winSize(800, 800);
 
-// INotify file handle
+// INotify file handle that emits events
 static int inot_instance;
 
 // Set this to true to make the file watcher thread exit
@@ -37,27 +39,28 @@ typedef std::shared_ptr<sf::Texture> TextureResource;
 typedef std::variant<ShaderResource, TextureResource> Resource;
 //typedef sf::Shader* Resource;
 
-struct channelinfo {
+// Aggregates information about a resource together
+struct ResInfo {
+    // Actual resource pointer
     Resource input;
+    // Path of the file the resource is loaded from
     std::filesystem::path path;
 
     // Flags
-    bool autoReload : 1 = true;
+    // bool autoReload : 1 = true;
 };
 
-// Maps watch handle to shader pointer
 // TODO: Mutex/Semaphore
-// auto shaderWatches = std::map<int, shaderinfo>();
-auto reloadWatches = std::map<int, channelinfo*>(); // Points to the channelinfo in a vector of channels
-static std::filesystem::path mainShaderFile;
+// Maps watch handle to shader pointer
+auto reloadWatches = std::map<int, ResInfo*>(); // Points to the channelinfo in a vector of channels
 
 // DONE: Use poll() instead of read and make the thread exit properly
 void shaderWatcherThread() {
     ssize_t numRead;
-    char* p;
-    inotify_event* event;
-    char buf[BUF_LEN] __attribute__((aligned(8)));
-    // fcntl(watch_handle, O_NONBLOCK); // Prevent the file handle from blocking
+    char* p; // Read cursor
+    inotify_event* event; // Read holder
+    char buf[BUF_LEN] __attribute__((aligned(8))); // Buffer
+    fcntl(inot_instance, O_NONBLOCK); // Prevent the file handle from blocking
 
     // Info for polling
     struct pollfd pd = {
@@ -75,17 +78,16 @@ void shaderWatcherThread() {
             continue;
         if (numRead == -1)
             return;
-        std::cout << "Looping" << std::endl;
+
+        // std::cout << "Looping" << std::endl;
         /* Process all of the events in buffer returned by read() */
         for (p = buf; p < buf + numRead;) {
             event = (struct inotify_event*)p;
-            std::cout << "File " << event->wd << " changed... Reloading" << std::endl;
+            std::cout << "File " << reloadWatches[event->wd]->path.string() << " changed... Reloading" << std::endl;
             // displayInotifyEvent(event);
 
-
-
             // Load the shader changed from the map of shader information, check if its meant to be reloaded
-            if (reloadWatches.contains(event->wd) && reloadWatches[event->wd]->autoReload) {
+            if (reloadWatches.contains(event->wd)) {
                 // Contains a shader
                 switch (reloadWatches[event->wd]->input.index()) {
                     case 0:
@@ -103,22 +105,33 @@ void shaderWatcherThread() {
                 }
             }
 
-
             //.shader->loadFromFile(shaderWatches[event->wd].path.string(), sf::Shader::Fragment);
+            // Seek to the next event
             p += sizeof(inotify_event) + event->len;
         }
     }
 }
 
-
-
-/// Add a shader change watch that can be monitored by the worker thread, 
+/// Add a resource change watch that can be monitored by the worker thread, 
 /// @returns the inotify handle for the watch
 int addResourceWatch(std::filesystem::path file, Resource r) {
-    int handle = inotify_add_watch(inot_instance, file.string().c_str(), IN_CLOSE_WRITE); // Get a watcher handle
-    channelinfo ci = { r, file }; // Make a pair of the shader and file
-    reloadWatches.emplace(handle, &ci);  // Add it to the map for access by the thread
+    int handle = inotify_add_watch(inot_instance, file.c_str(), IN_CLOSE_WRITE); // Get a watcher handle
+    assert(handle != -1);
 
+    ResInfo* fileInfo = new ResInfo();
+    fileInfo->input = r;
+    fileInfo->path = file; // Make a pair of the shader and file
+    reloadWatches.emplace(handle, fileInfo);  // Add it to the map for access by the thread
+
+    return handle;
+}
+
+/// Add a resource change watch that can be monitored by the worker thread, 
+/// @returns the inotify handle for the watch
+int addResourceWatch(ResInfo* r) {
+    int handle = inotify_add_watch(inot_instance, r->path.c_str(), IN_CLOSE_WRITE); // Get a watcher handle
+    assert(handle != -1);
+    reloadWatches.emplace(handle, r);  // Add it to the map for access by the thread
     return handle;
 }
 
@@ -135,24 +148,8 @@ int main(int argc, char const* argv[]) {
         return 1;
     }
 
-    mainShaderFile = std::filesystem::absolute(
-        std::filesystem::path(argv[1])
-    );
-
-    auto iChannels = std::vector<channelinfo>();
-    for (int ti = 2; ti < argc; ++ti) {
-        if (std::filesystem::exists(argv[ti])) {
-            TextureResource tex = std::make_shared<sf::Texture>();
-            tex->loadFromFile(argv[ti]);
-            tex->generateMipmap();
-            struct channelinfo ci = {
-                tex,
-                std::filesystem::path(argv[ti]),
-                true
-            };
-            iChannels.push_back(ci);
-        }
-    }
+    // Path to the primary shader
+    std::filesystem::path mainShaderFile = std::filesystem::path(argv[1]);
 
     // Watch for termination signal
     signal(SIGINT, signalHandler);
@@ -160,24 +157,68 @@ int main(int argc, char const* argv[]) {
     // Setup inotify
     inot_instance = inotify_init();
     assert(inot_instance != -1);
-    //watch_handle = inotify_add_watch(inot_instance, mainShaderFile.string().c_str(), IN_CLOSE_WRITE);
-    //std::cout << "Watch handle is " << watch_handle << std::endl;
 
+    // Initialize the SFML window
     sf::RenderWindow window = sf::RenderWindow(sf::VideoMode(winSize.x, winSize.y), "Simple shader display");
     window.setView(sf::View(sf::FloatRect(0.0, 0.0, 1.0, 1.0)));
 
-    // Main shader for the program
-    ShaderResource mainShader = std::make_shared<sf::Shader>(); // = sf::Shader();
-    mainShader->loadFromFile(mainShaderFile.string(), sf::Shader::Fragment);
+    // Information about the resources used 
+    auto iChannels = std::vector<ResInfo>();
+    auto iRenderBuffers = std::vector<std::shared_ptr<sf::RenderTexture>>();
+
+    for (int i = 0; i < argc - 2; ++i) {
+        ResInfo resInfo;
+        std::filesystem::path pth = std::filesystem::path(argv[i + 2]);
+
+        if (!std::filesystem::exists(pth)) {
+            std::cerr << "Error loading file " << pth.string() << std::endl;
+            continue;
+        }
+
+        if (pth.string().ends_with(".glsl")) {
+            // Instantiate and create the shader
+            ShaderResource shader = std::make_shared<sf::Shader>();
+            shader->loadFromFile(pth.string(), sf::Shader::Fragment);
+
+            std::cout << "Loading shader channel " << pth.string() << std::endl;
+
+            resInfo = {
+                shader,
+                pth
+            };
+
+            // Render texture to render into
+            auto rtex = std::make_shared<sf::RenderTexture>();
+            rtex->create(winSize.x, winSize.y);
+            iRenderBuffers.push_back(rtex);
+        }
+        else {
+            TextureResource tex = std::make_shared<sf::Texture>();
+            tex->loadFromFile(pth.string());
+
+            resInfo = {
+                tex,
+                pth
+            };
+
+            iRenderBuffers.push_back(std::shared_ptr<sf::RenderTexture>(nullptr));
+        }
+
+        iChannels.push_back(resInfo);
+        // Watch the resource
+        addResourceWatch(&iChannels[i]);
+    }
+
+    // Primary (display) shader
+    ShaderResource mainShaderRef = std::make_shared<sf::Shader>();
+    mainShaderRef->loadFromFile(mainShaderFile.string(), sf::Shader::Fragment);
+    addResourceWatch(mainShaderFile, mainShaderRef);
 
     // This thread polls for inotify events and in turn, watches for file changes
     std::thread watcherThread = std::thread(&shaderWatcherThread);
-    addResourceWatch(mainShaderFile, mainShader);
 
     // Fullscreen quad
     sf::RectangleShape rect = sf::RectangleShape(sf::Vector2f(winSize));
-
-    auto channel_textures = std::vector<sf::RenderTexture>();
 
     /*
      * Shader Inputs
@@ -205,33 +246,62 @@ int main(int argc, char const* argv[]) {
             if (event.type == sf::Event::Closed) window.close();
             if (event.type == sf::Event::Resized) {
                 winSize = sf::Vector2u(event.size.width, event.size.height);
-                mainShader->setUniform("iResolution", sf::Vector2f(winSize));
+
+                // Resize the render textures
+                for (auto rtex : iRenderBuffers) {
+                    if (rtex.get() != nullptr)
+                        rtex->create(winSize.x, winSize.y);
+                }
             }
         }
 
         // Set global uniforms
-        mainShader->setUniform("iResolution", sf::Vector2f(winSize));
-        mainShader->setUniform("iFrame", frameCounter++);
-        mainShader->setUniform("iTimeDelta", deltaClock.restart().asSeconds());
-        mainShader->setUniform("iTime", appClock.getElapsedTime().asSeconds());
-
-
+        mainShaderRef->setUniform("iResolution", sf::Vector2f(winSize));
+        mainShaderRef->setUniform("iFrame", frameCounter++);
+        mainShaderRef->setUniform("iTimeDelta", deltaClock.restart().asSeconds());
+        mainShaderRef->setUniform("iTime", appClock.getElapsedTime().asSeconds());
 
         // Set the channel values
+        // If the channel is a shader render them into the render textures
         for (int i = 0; i < iChannels.size(); ++i) {
             switch (iChannels[i].input.index()) {
+                case 0: { // Shader
+                    // Setup the context
+                    iRenderBuffers[i]->clear(sf::Color::Magenta);
+                    iRenderBuffers[i]->setView(sf::View(sf::FloatRect(0.0, 0.0, 1.0, 1.0)));
+                    iRenderBuffers[i]->draw(rect, std::get<ShaderResource>(iChannels[i].input).get());
+
+                    sf::Shader* channelShader = std::get<ShaderResource>(iChannels[i].input).get();
+                    assert(channelShader->isAvailable());
+
+                    // Set the textures as like feedback
+                    // for (int rti = 0; rti < iRenderChannels.size(); ++rti)
+                    //     channelShader->setUniform("iChannel" + std::to_string(i), iRenderChannels[i]->getTexture());
+
+                    // Set uniforms into the subshader
+                    channelShader->setUniform("iResolution", sf::Vector2f(winSize));
+                    channelShader->setUniform("iFrame", frameCounter++);
+                    channelShader->setUniform("iTimeDelta", deltaClock.restart().asSeconds());
+                    channelShader->setUniform("iTime", appClock.getElapsedTime().asSeconds());
+
+                    iRenderBuffers[i]->display();
+                    // Convert to texture and send to the shader
+                    mainShaderRef->setUniform("iChannel" + std::to_string(i), iRenderBuffers[i]->getTexture());
+                } break;
+
                 case 1: // Texture
-                    mainShader->setUniform("iChannel" + std::to_string(i), *std::get<TextureResource>(iChannels[i].input));
+                    mainShaderRef->setUniform("iChannel" + std::to_string(i), *std::get<TextureResource>(iChannels[i].input));
                     break;
-                default: break;
+
+                default: return 1;
             }
         }
 
         // Clear color
-        window.clear(sf::Color::White);
+        window.clear(sf::Color::Magenta);
 
         // Render the fullscreen quad
-        window.draw(rect, mainShader.get());
+        window.draw(rect, mainShaderRef.get());
 
         // Update framebuffer
         window.display();

@@ -1,4 +1,6 @@
 make all --print-data-base --no-builtin-variables --no-builtin-rules --question
+make: *** No rule to make target 'all'.  Stop.
+ 
 # GNU Make 4.3
 # Built for x86_64-pc-linux-gnu
 # Copyright (C) 1988-2020 Free Software Foundation, Inc.
@@ -6,7 +8,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Sat Oct 16 17:19:19 2021
+# Make data base, printed on Sun Oct 17 15:10:22 2021
 
 # Variables
 
@@ -21,7 +23,7 @@ SNAP_INSTANCE_KEY =
 # environment
 I3SOCK = /run/user/1000/i3/ipc-socket.2646
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-0f0780d1-10f1-4189-b855-6aa2394c4385.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-5786b4c5-c91f-4880-aa8e-9e6ef3355ea1.sock
 # environment
 MANDATORY_PATH = /usr/share/gconf/regolith.mandatory.path
 # environment
@@ -34,8 +36,6 @@ MAKE_COMMAND := make
 GTK3_MODULES = xapp-gtk3-module
 # environment
 QT_ACCESSIBILITY = 1
-# environment
-GOPATH = /home/nifley/go
 # automatic
 @D = $(patsubst %/,%,$(dir $@))
 # environment
@@ -213,8 +213,6 @@ GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
 GDK_PIXBUF_MODULE_FILE = /home/nifley/snap/code/common/.cache/gdk-pixbuf-loaders.cache
 # environment
-GOMODCACHE = /home/nifley/go/pkg/mod
-# environment
 VISUAL = vim
 # environment
 XDG_SESSION_CLASS = user
@@ -234,8 +232,6 @@ TERM = xterm-256color
 SNAP_NAME = code
 # environment
 GSETTINGS_SCHEMA_DIR = /snap/code/77/usr/share/glib-2.0/schemas
-# environment
-GOPROXY = https://proxy.golang.org,direct
 # default
 .RECIPEPREFIX := 
 # automatic
@@ -263,7 +259,7 @@ GDMSESSION = regolith
 # environment
 SNAP_LIBRARY_PATH = /var/lib/snapd/lib/gl:/var/lib/snapd/lib/gl32:/var/lib/snapd/void
 # variable set hash-table stats:
-# Load=126/1024=12%, Rehash=0, Collisions=7/156=4%
+# Load=123/1024=12%, Rehash=0, Collisions=7/153=5%
 
 # Pattern-specific Variable Values
 
@@ -271,9 +267,9 @@ SNAP_LIBRARY_PATH = /var/lib/snapd/lib/gl:/var/lib/snapd/lib/gl32:/var/lib/snapd
 
 # Directories
 
-# . (device 2065, inode 1362): 9 files, no impossibilities.
+# . (device 2065, inode 1362): 10 files, no impossibilities.
 
-# 9 files, no impossibilities in 1 directories.
+# 10 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
@@ -284,14 +280,11 @@ SNAP_LIBRARY_PATH = /var/lib/snapd/lib/gl:/var/lib/snapd/lib/gl32:/var/lib/snapd
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2021-10-16 17:18:47.36
+#  Last modified 2021-10-17 15:10:21.93
 #  File has been updated.
 #  Successfully updated.
 
 # Not a target:
- 
-make: *** No rule to make target 'all'.  Stop.
- 
 src/main.cpp:
 #  Implicit rule search has not been done.
 #  Modification time never checked.
@@ -302,8 +295,9 @@ clean:
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
+ 
 #  recipe to execute (from 'Makefile', line 10):
-	rm -f ssdisp
+	rm -f swatch
 
 swatch: src/main.cpp
 #  Implicit rule search has not been done.
@@ -331,7 +325,7 @@ test: swatch
 #  File does not exist.
 #  File has not been updated.
 #  recipe to execute (from 'Makefile', line 7):
-	./swatch ./test.glsl ./test.jpeg
+	./swatch ./test2.glsl ./test.glsl ./test.jpeg
 
 .PHONY: test clean
 #  Implicit rule search has not been done.
@@ -346,12 +340,12 @@ test: swatch
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 18 / storage = 144 B / avg = 8 B
-# current buf: size = 8162 B / used = 144 B / count = 18 / avg = 8 B
+# strcache buffers: 1 (0) / strings = 19 / storage = 155 B / avg = 8 B
+# current buf: size = 8162 B / used = 155 B / count = 19 / avg = 8 B
 
-# strcache performance: lookups = 30 / hit rate = 40%
+# strcache performance: lookups = 31 / hit rate = 38%
 # hash-table stats:
-# Load=18/8192=0%, Rehash=0, Collisions=0/30=0%
-# Finished Make data base on Sat Oct 16 17:19:19 2021
+# Load=19/8192=0%, Rehash=0, Collisions=0/31=0%
+# Finished Make data base on Sun Oct 17 15:10:22 2021
 
  

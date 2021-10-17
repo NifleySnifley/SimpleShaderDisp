@@ -1,5 +1,5 @@
 make --dry-run --keep-going --print-directory
 make: Entering directory '/media/nifley/Storage/Coding/Graphics/SimpleShaderDisp'
-./swatch ./test.glsl ./test.jpeg
+./swatch ./test2.glsl ./test.glsl ./test.jpeg
 make: Leaving directory '/media/nifley/Storage/Coding/Graphics/SimpleShaderDisp'
  
