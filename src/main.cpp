@@ -112,11 +112,12 @@ void shaderWatcherThread() {
     }
 }
 
-/// Add a resource change watch that can be monitored by the worker thread, 
+/// Add a resource change watch that can be monitored by the worker thread,
 /// @returns the inotify handle for the watch
 int addResourceWatch(std::filesystem::path file, Resource r) {
     int handle = inotify_add_watch(inot_instance, file.c_str(), IN_CLOSE_WRITE); // Get a watcher handle
     assert(handle != -1);
+    std::cout << "New watch handle: " << std::to_string(handle) << std::endl;
 
     ResInfo* fileInfo = new ResInfo();
     fileInfo->input = r;
@@ -126,11 +127,13 @@ int addResourceWatch(std::filesystem::path file, Resource r) {
     return handle;
 }
 
-/// Add a resource change watch that can be monitored by the worker thread, 
+/// Add a resource change watch that can be monitored by the worker thread,
 /// @returns the inotify handle for the watch
 int addResourceWatch(ResInfo* r) {
-    int handle = inotify_add_watch(inot_instance, r->path.c_str(), IN_CLOSE_WRITE); // Get a watcher handle
+    int handle = inotify_add_watch(inot_instance, std::filesystem::absolute(r->path).c_str(), IN_CLOSE_WRITE); // Get a watcher handle
+    std::cout << "Added resource watch to file '" << std::filesystem::absolute(r->path).string() << "'" << std::endl;
     assert(handle != -1);
+    std::cout << "New watch handle: " << std::to_string(handle) << std::endl;
     reloadWatches.emplace(handle, r);  // Add it to the map for access by the thread
     return handle;
 }
@@ -206,13 +209,21 @@ int main(int argc, char const* argv[]) {
 
         iChannels.push_back(resInfo);
         // Watch the resource
+        printf("Adding channel watch... \n");
         addResourceWatch(&iChannels[i]);
+        printf("Done. \n");
     }
 
     // Primary (display) shader
     ShaderResource mainShaderRef = std::make_shared<sf::Shader>();
     mainShaderRef->loadFromFile(mainShaderFile.string(), sf::Shader::Fragment);
-    addResourceWatch(mainShaderFile, mainShaderRef);
+    ResInfo mainShaderInfo = {
+        mainShaderRef,
+        mainShaderFile
+    };
+    printf("Adding main shader watch... \n");
+    addResourceWatch(&mainShaderInfo);
+    printf("Done. \n");
 
     // This thread polls for inotify events and in turn, watches for file changes
     std::thread watcherThread = std::thread(&shaderWatcherThread);
@@ -260,6 +271,7 @@ int main(int argc, char const* argv[]) {
         mainShaderRef->setUniform("iFrame", frameCounter++);
         mainShaderRef->setUniform("iTimeDelta", deltaClock.restart().asSeconds());
         mainShaderRef->setUniform("iTime", appClock.getElapsedTime().asSeconds());
+        mainShaderRef->setUniform("iMouse", sf::Mouse::getPosition(window));
 
         // Set the channel values
         // If the channel is a shader render them into the render textures
@@ -283,6 +295,7 @@ int main(int argc, char const* argv[]) {
                     channelShader->setUniform("iFrame", frameCounter++);
                     channelShader->setUniform("iTimeDelta", deltaClock.restart().asSeconds());
                     channelShader->setUniform("iTime", appClock.getElapsedTime().asSeconds());
+                    channelShader->setUniform("iMouse", sf::Mouse::getPosition(window));
 
                     iRenderBuffers[i]->display();
                     // Convert to texture and send to the shader

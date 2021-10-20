@@ -17,7 +17,7 @@ float sdHorseshoe( in vec2 p, in vec2 c, in float r, in vec2 w )
 {
     p.x = abs(p.x);
     float l = length(p);
-    p = mat2(-c.x, c.y, 
+    p = mat2(-c.x, c.y,
               c.y, c.x)*p;
     p = vec2((p.y>0.0 || p.x>0.0)?p.x:l*sign(-c.x),
              (p.x>0.0)?p.y:l );
@@ -31,14 +31,14 @@ void main()
     // normalized pixel coordinates
     vec2 p = (2.0*fragCoord-iResolution.xy)/iResolution.y;
     vec2 m = vec2(0.0);
-    
+
     // animation
     float t =            3.14* (0.5+0.5*cos(iTime*0.5));
     vec2  w = vec2(0.750,0.25)*(0.5+0.5*cos(iTime*vec2(0.7,1.1)+vec2(0.0,3.0)));
-    
+
     // distance
     float d = sdHorseshoe(p-vec2(0.0,-0.1),vec2(cos(t),sin(t)), 0.5, w);
-        
+
     // coloring
     vec3 col = vec3(1.0) - sign(d)*vec3(0.1,0.4,0.7);
 	col *= 1.0 - exp(-2.0*abs(d));
@@ -51,7 +51,7 @@ void main()
         col = mix(col, vec3(1.0,1.0,0.0), 1.0-smoothstep(0.0, 0.005, abs(length(p-m)-abs(d))-0.0025));
         col = mix(col, vec3(1.0,1.0,0.0), 1.0-smoothstep(0.0, 0.005, length(p-m)-0.015));
     }
-    
+
 	gl_FragColor = vec4(col, 1.0);
     //gl_FragColor = vec4(1.0);
 }
