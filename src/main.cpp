@@ -19,6 +19,7 @@
 
 // Graphics and other includes
 #include "SFML/Graphics.hpp"
+#include <X11/Xlib.h>
 #include "utils.h"
 #pragma endregion
 
@@ -53,6 +54,8 @@ struct ResInfo {
 // TODO: Mutex/Semaphore
 // Maps watch handle to shader pointer
 auto reloadWatches = std::map<int, ResInfo*>(); // Points to the channelinfo in a vector of channels
+// A mutex lock to prevent shader changes during a frame;
+static std::mutex resourcesLock;
 
 // DONE: Use poll() instead of read and make the thread exit properly
 void shaderWatcherThread() {
@@ -88,6 +91,7 @@ void shaderWatcherThread() {
 
             // Load the shader changed from the map of shader information, check if its meant to be reloaded
             if (reloadWatches.contains(event->wd)) {
+                resourcesLock.lock();
                 // Contains a shader
                 switch (reloadWatches[event->wd]->input.index()) {
                     case 0:
@@ -103,6 +107,7 @@ void shaderWatcherThread() {
 
                     default: break;
                 }
+                resourcesLock.unlock();
             }
 
             //.shader->loadFromFile(shaderWatches[event->wd].path.string(), sf::Shader::Fragment);
@@ -138,11 +143,11 @@ int addResourceWatch(ResInfo* r) {
     return handle;
 }
 
-/// Handle termination signals to "gracefully die"
-void signalHandler(int sig) {
-    watcherShouldExit = true;
-    exit(sig);
-}
+// /// Handle termination signals to "gracefully die"
+// void signalHandler(int sig) {
+//     watcherShouldExit = true;
+//     exit(sig);
+// }
 
 int main(int argc, char const* argv[]) {
     if (argc < 2) {
@@ -155,7 +160,8 @@ int main(int argc, char const* argv[]) {
     std::filesystem::path mainShaderFile = std::filesystem::path(argv[1]);
 
     // Watch for termination signal
-    signal(SIGINT, signalHandler);
+    // signal(SIGINT, signalHandler);
+    XInitThreads();
 
     // Setup inotify
     inot_instance = inotify_init();
@@ -209,9 +215,7 @@ int main(int argc, char const* argv[]) {
 
         iChannels.push_back(resInfo);
         // Watch the resource
-        printf("Adding channel watch... \n");
         addResourceWatch(&iChannels[i]);
-        printf("Done. \n");
     }
 
     // Primary (display) shader
@@ -221,9 +225,7 @@ int main(int argc, char const* argv[]) {
         mainShaderRef,
         mainShaderFile
     };
-    printf("Adding main shader watch... \n");
     addResourceWatch(&mainShaderInfo);
-    printf("Done. \n");
 
     // This thread polls for inotify events and in turn, watches for file changes
     std::thread watcherThread = std::thread(&shaderWatcherThread);
@@ -266,29 +268,27 @@ int main(int argc, char const* argv[]) {
             }
         }
 
+        // Lock the shaders
+        resourcesLock.lock();
+
         // Set global uniforms
         mainShaderRef->setUniform("iResolution", sf::Vector2f(winSize));
         mainShaderRef->setUniform("iFrame", frameCounter++);
         mainShaderRef->setUniform("iTimeDelta", deltaClock.restart().asSeconds());
         mainShaderRef->setUniform("iTime", appClock.getElapsedTime().asSeconds());
-        mainShaderRef->setUniform("iMouse", sf::Mouse::getPosition(window));
+        mainShaderRef->setUniform("iMouse", sf::Vector2f(sf::Mouse::getPosition(window)));
 
         // Set the channel values
         // If the channel is a shader render them into the render textures
         for (int i = 0; i < iChannels.size(); ++i) {
             switch (iChannels[i].input.index()) {
                 case 0: { // Shader
-                    // Setup the context
-                    iRenderBuffers[i]->clear(sf::Color::Magenta);
-                    iRenderBuffers[i]->setView(sf::View(sf::FloatRect(0.0, 0.0, 1.0, 1.0)));
-                    iRenderBuffers[i]->draw(rect, std::get<ShaderResource>(iChannels[i].input).get());
-
                     sf::Shader* channelShader = std::get<ShaderResource>(iChannels[i].input).get();
                     assert(channelShader->isAvailable());
 
                     // Set the textures as like feedback
-                    // for (int rti = 0; rti < iRenderChannels.size(); ++rti)
-                    //     channelShader->setUniform("iChannel" + std::to_string(i), iRenderChannels[i]->getTexture());
+                    for (int rti = 0; rti < iRenderBuffers.size(); ++rti)
+                        channelShader->setUniform("iChannel" + std::to_string(i), iRenderBuffers[i]->getTexture());
 
                     // Set uniforms into the subshader
                     channelShader->setUniform("iResolution", sf::Vector2f(winSize));
@@ -296,6 +296,16 @@ int main(int argc, char const* argv[]) {
                     channelShader->setUniform("iTimeDelta", deltaClock.restart().asSeconds());
                     channelShader->setUniform("iTime", appClock.getElapsedTime().asSeconds());
                     channelShader->setUniform("iMouse", sf::Mouse::getPosition(window));
+
+                    // Setup the context
+                    iRenderBuffers[i]->clear(sf::Color::Black);
+
+                    // States to render without alpha blending
+                    sf::RenderStates states(channelShader);
+                    states.blendMode = sf::BlendNone;
+
+                    iRenderBuffers[i]->setView(sf::View(sf::FloatRect(0.0, 0.0, 1.0, 1.0)));
+                    iRenderBuffers[i]->draw(rect, channelShader);
 
                     iRenderBuffers[i]->display();
                     // Convert to texture and send to the shader
@@ -311,10 +321,16 @@ int main(int argc, char const* argv[]) {
         }
 
         // Clear color
-        window.clear(sf::Color::Magenta);
+        window.clear(sf::Color::Black);
 
+        // States to render without alpha blending
+        sf::RenderStates states(mainShaderRef.get());
+        states.blendMode = sf::BlendNone;
         // Render the fullscreen quad
-        window.draw(rect, mainShaderRef.get());
+        window.draw(rect, states);
+
+        // Unlock the shaders
+        resourcesLock.unlock();
 
         // Update framebuffer
         window.display();

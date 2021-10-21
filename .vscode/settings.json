@@ -6,4 +6,5 @@
         "atomic": "cpp",
         "chrono": "cpp"
     },
+    "C_Cpp.errorSquiggles": "Enabled",
 }

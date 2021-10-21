@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Tue Oct 19 19:43:26 2021
+# Make data base, printed on Thu Oct 21 15:59:30 2021
 
 # Variables
 
@@ -15,13 +15,11 @@ GDK_BACKEND = x11
 # environment
 LC_ALL = C
 # environment
-NO_AT_BRIDGE = 1
-# environment
 SNAP_INSTANCE_KEY = 
 # environment
-I3SOCK = /run/user/1000/i3/ipc-socket.2646
+I3SOCK = /run/user/1000/i3/ipc-socket.2407
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-e6828377-69e6-4c52-a202-132ce3620c41.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-a6a59d24-8cb2-409e-9da5-56a74ff96e39.sock
 # environment
 MANDATORY_PATH = /usr/share/gconf/regolith.mandatory.path
 # environment
@@ -39,7 +37,7 @@ QT_ACCESSIBILITY = 1
 # environment
 SNAP_INSTANCE_NAME = code
 # environment
-GDK_PIXBUF_MODULEDIR = /snap/code/77/usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders
+GDK_PIXBUF_MODULEDIR = /snap/code/78/usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders
 # environment
 VSCODE_HANDLES_UNCAUGHT_ERRORS = true
 # default
@@ -59,7 +57,7 @@ VSCODE_LOG_STACK = false
 # automatic
 %F = $(notdir $%)
 # environment
-VSCODE_CODE_CACHE_PATH = /home/nifley/.config/Code/CachedData/c13f1abb110fc756f9b3a6f16670df9cd9d4cf63
+VSCODE_CODE_CACHE_PATH = /home/nifley/.config/Code/CachedData/6cba118ac49a1b88332f312a8f67186f7f3c1643
 # environment
 LANG = C
 # environment
@@ -101,13 +99,13 @@ SNAP_REEXEC =
 # environment
 VSCODE_VERBOSE_LOGGING = true
 # environment
-VSCODE_PID = 8295
+VSCODE_PID = 15132
 # environment
 XDG_SESSION_TYPE = x11
 # automatic
 ?D = $(patsubst %/,%,$(dir $?))
 # environment
-SESSION_MANAGER = local/nifley-ubuntoo:@/tmp/.ICE-unix/2293,unix/nifley-ubuntoo:/tmp/.ICE-unix/2293
+SESSION_MANAGER = local/nifley-ubuntoo:@/tmp/.ICE-unix/2055,unix/nifley-ubuntoo:/tmp/.ICE-unix/2055
 # automatic
 *F = $(notdir $*)
 # environment
@@ -147,9 +145,9 @@ MAKEFILES :=
 # environment
 SNAP_USER_COMMON = /home/nifley/snap/code/common
 # environment
-SNAP = /snap/code/77
+SNAP = /snap/code/78
 # environment
-SNAP_REVISION = 77
+SNAP_REVISION = 78
 # environment
 COMPIZ_CONFIG_PROFILE = gnome-flashback
 # environment
@@ -161,7 +159,7 @@ USERNAME = nifley
 # automatic
 ?F = $(notdir $?)
 # environment
-DESKTOP_AUTOSTART_ID = 10f29df47669abcc6a16343416523549500000022930016
+DESKTOP_AUTOSTART_ID = 109d874876bf6939a163482866531423100000020550016
 # environment
 XDG_CURRENT_DESKTOP = Regolith:GNOME-Flashback:GNOME
 # automatic
@@ -195,17 +193,17 @@ MAKE_VERSION := 4.3
 # environment
 DISABLE_WAYLAND = 1
 # environment
-SNAP_DATA = /var/snap/code/77
+SNAP_DATA = /var/snap/code/78
 # environment
 SNAP_CONTEXT = Are9hT3q_ieMAbXdxO0fAoTYLLQ1LZxsyboanD8eMuxmDZEyXHbG
 # makefile (from 'Makefile', line 2)
-LDFLAGS = -I./include -L./usr/local/include/SDL2 -lpthread -lsfml-graphics -lsfml-window -lsfml-system -lX11
+LDFLAGS = -I./include -L./usr/local/include/SDL2 -lpthread -lsfml-graphics -lsfml-window -lsfml-system -lX11 -lgomp
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 2576
+GIO_LAUNCHED_DESKTOP_FILE_PID = 2340
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # makefile (from 'Makefile', line 1)
-CFLAGS = -std=c++20 -g
+CFLAGS = -std=c++20 -g -fopenmp
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
@@ -223,19 +221,19 @@ QT_IM_MODULE = ibus
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-VSCODE_IPC_HOOK = /run/user/1000/vscode-8a43dfc5-1.61.1-main.sock
+VSCODE_IPC_HOOK = /run/user/1000/vscode-8a43dfc5-1.61.2-main.sock
 # environment
 TERM = xterm-256color
 # environment
 SNAP_NAME = code
 # environment
-GSETTINGS_SCHEMA_DIR = /snap/code/77/usr/share/glib-2.0/schemas
+GSETTINGS_SCHEMA_DIR = /snap/code/78/usr/share/glib-2.0/schemas
 # default
 .RECIPEPREFIX := 
 # automatic
 <F = $(notdir $<)
 # environment
-SNAP_VERSION = c13f1abb
+SNAP_VERSION = 6cba118a
 # default
 SUFFIXES := 
 # environment
@@ -247,7 +245,7 @@ SNAP_COMMON = /var/snap/code/common
 # default
 .FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell nocomment grouped-target extra-prereqs archives jobserver output-sync check-symlink load
 # environment
-SNAP_USER_DATA = /home/nifley/snap/code/77
+SNAP_USER_DATA = /home/nifley/snap/code/78
 # environment
 XDG_MENU_PREFIX = gnome-flashback-
 # environment
@@ -257,7 +255,7 @@ GDMSESSION = regolith
 # environment
 SNAP_LIBRARY_PATH = /var/lib/snapd/lib/gl:/var/lib/snapd/lib/gl32:/var/lib/snapd/void
 # variable set hash-table stats:
-# Load=123/1024=12%, Rehash=0, Collisions=7/153=5%
+# Load=122/1024=12%, Rehash=0, Collisions=7/152=5%
 
 # Pattern-specific Variable Values
 
@@ -265,7 +263,7 @@ SNAP_LIBRARY_PATH = /var/lib/snapd/lib/gl:/var/lib/snapd/lib/gl32:/var/lib/snapd
 
 # Directories
 
-# . (device 2065, inode 1362): 10 files, no impossibilities.
+# . (device 2065, inode 684): 10 files, no impossibilities.
 
 # 10 files, no impossibilities in 1 directories.
 
@@ -278,11 +276,8 @@ SNAP_LIBRARY_PATH = /var/lib/snapd/lib/gl:/var/lib/snapd/lib/gl32:/var/lib/snapd
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2021-10-19 19:43:17.17
+#  Last modified 2021-10-20 18:24:25.79
 #  File has been updated.
- 
-make: *** No rule to make target 'all'.  Stop.
- 
 #  Successfully updated.
 
 # Not a target:
@@ -306,6 +301,9 @@ swatch: src/main.cpp
 #  recipe to execute (from 'Makefile', line 13):
 	clang++ $(CFLAGS) -o swatch ./src/main.cpp $(LDFLAGS)
 	chmod +x ./swatch
+ 
+make: *** No rule to make target 'all'.  Stop.
+ 
 
 # Not a target:
 .DEFAULT:
@@ -328,25 +326,33 @@ test: swatch
 #  recipe to execute (from 'Makefile', line 7):
 	./swatch ./test2.glsl ./test.glsl
 
-.PHONY: test clean
+install:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 17):
+	cp ./swatch ~/.local/bin/swatch
+
+.PHONY: test clean install
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
 
 # files hash-table stats:
-# Load=9/1024=1%, Rehash=0, Collisions=0/26=0%
+# Load=10/1024=1%, Rehash=0, Collisions=0/29=0%
 # VPATH Search Paths
 
 # No 'vpath' search paths.
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 19 / storage = 155 B / avg = 8 B
-# current buf: size = 8162 B / used = 155 B / count = 19 / avg = 8 B
+# strcache buffers: 1 (0) / strings = 20 / storage = 163 B / avg = 8 B
+# current buf: size = 8162 B / used = 163 B / count = 20 / avg = 8 B
 
-# strcache performance: lookups = 31 / hit rate = 38%
+# strcache performance: lookups = 34 / hit rate = 41%
 # hash-table stats:
-# Load=19/8192=0%, Rehash=0, Collisions=0/31=0%
-# Finished Make data base on Tue Oct 19 19:43:26 2021
+# Load=20/8192=0%, Rehash=0, Collisions=0/34=0%
+# Finished Make data base on Thu Oct 21 15:59:30 2021
 
  
