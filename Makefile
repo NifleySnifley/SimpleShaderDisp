@@ -1,17 +1,31 @@
-CFLAGS = -std=c++20 -g -fopenmp
-LDFLAGS = -I./include -L./usr/local/include/SDL2 -lpthread -lsfml-graphics -lsfml-window -lsfml-system -lX11 -lgomp
+CC = clang++
+FLAGS = -std=c++20 -g -fopenmp
+LDFLAGS = -I./src -lpthread -lsfml-graphics -lsfml-window -lsfml-system -lX11 -lgomp
+BUILDDIR = ./build
 
-.PHONY: test clean install
+SOURCES = $(wildcard src/*.cpp)
+OBJECTS = $(patsubst src/%.cpp,build/%.o,$(SOURCES))
 
-test: swatch
-	./swatch ./test2.glsl ./test.glsl
+.PHONY: build test clean install
 
+build: $(BUILDDIR)/swatch
+
+# Link all the objects
+$(BUILDDIR)/swatch: $(OBJECTS)
+	$(CC) $(FLAGS) $^ -o $@ $(LDFLAGS)
+
+# Build each source file (compilation unit)
+$(OBJECTS): $(BUILDDIR)/%.o : ./src/%.cpp
+	@mkdir -p $(dir $@)
+	$(CC) -c $(FLAGS) $< -o $@
+
+# Test with some example shader files
+test: build
+	$(BUILDDIR)/swatch ./test2.glsl ./test.glsl
+
+# Installation and cleaning
 clean:
-	rm -f swatch
+	rm -rf $(BUILDDIR)
 
-swatch: src/main.cpp
-	clang++ $(CFLAGS) -o swatch ./src/main.cpp $(LDFLAGS)
-	chmod +x ./swatch
-
-install:
-	cp ./swatch ~/.local/bin/swatch
+install: build
+	cp $(BUILDDIR)/swatch ~/.local/bin/swatch

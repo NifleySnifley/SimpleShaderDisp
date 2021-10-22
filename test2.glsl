@@ -1,8 +1,9 @@
-
 uniform float iTime;
 uniform vec2 iResolution;
 uniform sampler2D iChannel0;
 uniform sampler2D iChannel1;
+
+#include "test.glsl"
 
 void main() {
     vec2 UV = gl_FragCoord.xy / iResolution.xy;

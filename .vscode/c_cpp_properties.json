@@ -4,25 +4,18 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/usr/include/**"
+                "/usr/include/**",
+                "/usr/local/include/**"
             ],
             "defines": [],
-            "compilerPath": "/usr/bin/clang++",
+            "compilerPath": "/bin/g++",
             "compilerArgs": [
                 "-g",
-                "-Wall"
+                "-Wextra"
             ],
-            "intelliSenseMode": "linux-clang-x64",
+            "intelliSenseMode": "linux-gcc-x64",
             "cStandard": "c17",
-            "cppStandard": "c++20",
-            "browse": {
-                "path": [
-                    "${workspaceFolder}/**",
-                    "/usr/include/**"
-                ],
-                "limitSymbolsToIncludedHeaders": true,
-                "databaseFilename": ""
-            }
+            "cppStandard": "c++20"
         }
     ],
     "version": 4

@@ -20,7 +20,7 @@
 // Graphics and other includes
 #include "SFML/Graphics.hpp"
 #include <X11/Xlib.h>
-#include "utils.h"
+#include "preprocessor.h"
 #pragma endregion
 
 // Buffer length for reading inotify events
@@ -51,7 +51,7 @@ struct ResInfo {
     // bool autoReload : 1 = true;
 };
 
-// TODO: Mutex/Semaphore
+// Done: Mutex/Semaphore
 // Maps watch handle to shader pointer
 auto reloadWatches = std::map<int, ResInfo*>(); // Points to the channelinfo in a vector of channels
 // A mutex lock to prevent shader changes during a frame;
@@ -91,7 +91,7 @@ void shaderWatcherThread() {
 
             // Load the shader changed from the map of shader information, check if its meant to be reloaded
             if (reloadWatches.contains(event->wd)) {
-                resourcesLock.lock();
+                std::lock_guard<std::mutex> lock{ resourcesLock };
                 // Contains a shader
                 switch (reloadWatches[event->wd]->input.index()) {
                     case 0:
@@ -107,7 +107,6 @@ void shaderWatcherThread() {
 
                     default: break;
                 }
-                resourcesLock.unlock();
             }
 
             //.shader->loadFromFile(shaderWatches[event->wd].path.string(), sf::Shader::Fragment);
@@ -115,6 +114,20 @@ void shaderWatcherThread() {
             p += sizeof(inotify_event) + event->len;
         }
     }
+}
+
+std::string loadShader(std::filesystem::path pth) {
+    if (!std::filesystem::exists(pth)) {
+        std::cerr << "Shader file '" << pth.string() << "' does not exist" << std::endl;
+        return nullptr;
+    }
+    std::ifstream file = std::ifstream(pth.string());
+    std::string sSrc(
+        (std::istreambuf_iterator<char>(file)),
+        std::istreambuf_iterator<char>()
+    );
+
+    preProcessShaderSource(sSrc, true, true);
 }
 
 /// Add a resource change watch that can be monitored by the worker thread,
@@ -170,6 +183,7 @@ int main(int argc, char const* argv[]) {
     // Initialize the SFML window
     sf::RenderWindow window = sf::RenderWindow(sf::VideoMode(winSize.x, winSize.y), "Simple shader display");
     window.setView(sf::View(sf::FloatRect(0.0, 0.0, 1.0, 1.0)));
+    window.setFramerateLimit(60);
 
     // Information about the resources used 
     auto iChannels = std::vector<ResInfo>();
@@ -204,6 +218,10 @@ int main(int argc, char const* argv[]) {
         else {
             TextureResource tex = std::make_shared<sf::Texture>();
             tex->loadFromFile(pth.string());
+            // Enable linear interpolation and tiling, usually its useful
+            tex->setSmooth(true);
+            tex->setRepeated(true);
+            tex->generateMipmap();
 
             resInfo = {
                 tex,
@@ -232,6 +250,8 @@ int main(int argc, char const* argv[]) {
 
     // Fullscreen quad
     sf::RectangleShape rect = sf::RectangleShape(sf::Vector2f(winSize));
+
+    // TODO: iChannelResolution, Audio, QOL improvements, FPS counter, Keyboard input (iKeyboard)
 
     /*
      * Shader Inputs
@@ -335,9 +355,6 @@ int main(int argc, char const* argv[]) {
         // Update framebuffer
         window.display();
     }
-
-    // Done: Fix the thread function(use poll())
-    // pthread_cancel(watcherThread.native_handle());
 
     // Signal the thread to exit and join it
     watcherShouldExit = true;
