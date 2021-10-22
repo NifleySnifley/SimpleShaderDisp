@@ -1,4 +1,4 @@
 # VSCode extension outputs
-*.log
+.vscode/*.log
 
 build/
