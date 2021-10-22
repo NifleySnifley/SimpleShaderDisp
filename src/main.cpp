@@ -57,6 +57,21 @@ auto reloadWatches = std::map<int, ResInfo*>(); // Points to the channelinfo in 
 // A mutex lock to prevent shader changes during a frame;
 static std::mutex resourcesLock;
 
+std::string loadShader(std::filesystem::path pth) {
+    if (!std::filesystem::exists(pth)) {
+        std::cerr << "Shader file '" << pth.string() << "' does not exist" << std::endl;
+        exit(-1);
+    }
+    std::ifstream file = std::ifstream(pth);
+    std::string sSrc(
+        (std::istreambuf_iterator<char>(file)),
+        std::istreambuf_iterator<char>()
+    );
+
+    sSrc = preProcessShaderSource(sSrc, true, true);
+    return sSrc;
+}
+
 // DONE: Use poll() instead of read and make the thread exit properly
 void shaderWatcherThread() {
     ssize_t numRead;
@@ -94,11 +109,13 @@ void shaderWatcherThread() {
                 std::lock_guard<std::mutex> lock{ resourcesLock };
                 // Contains a shader
                 switch (reloadWatches[event->wd]->input.index()) {
-                    case 0:
+                    case 0: {
                         // Load the shader from file
+                        std::string srcCode = loadShader(reloadWatches[event->wd]->path);
                         std::get<ShaderResource>(reloadWatches[event->wd]->input)
-                            ->loadFromFile(reloadWatches[event->wd]->path.string(), sf::Shader::Fragment);
+                            ->loadFromMemory(srcCode, sf::Shader::Fragment);
                         break;
+                    }
 
                     case 1:
                         std::get<TextureResource>(reloadWatches[event->wd]->input)
@@ -114,20 +131,6 @@ void shaderWatcherThread() {
             p += sizeof(inotify_event) + event->len;
         }
     }
-}
-
-std::string loadShader(std::filesystem::path pth) {
-    if (!std::filesystem::exists(pth)) {
-        std::cerr << "Shader file '" << pth.string() << "' does not exist" << std::endl;
-        return nullptr;
-    }
-    std::ifstream file = std::ifstream(pth.string());
-    std::string sSrc(
-        (std::istreambuf_iterator<char>(file)),
-        std::istreambuf_iterator<char>()
-    );
-
-    preProcessShaderSource(sSrc, true, true);
 }
 
 /// Add a resource change watch that can be monitored by the worker thread,
@@ -201,7 +204,8 @@ int main(int argc, char const* argv[]) {
         if (pth.string().ends_with(".glsl")) {
             // Instantiate and create the shader
             ShaderResource shader = std::make_shared<sf::Shader>();
-            shader->loadFromFile(pth.string(), sf::Shader::Fragment);
+            std::string src = loadShader(pth);
+            shader->loadFromMemory(src, sf::Shader::Fragment);
 
             std::cout << "Loading shader channel " << pth.string() << std::endl;
 
@@ -238,7 +242,8 @@ int main(int argc, char const* argv[]) {
 
     // Primary (display) shader
     ShaderResource mainShaderRef = std::make_shared<sf::Shader>();
-    mainShaderRef->loadFromFile(mainShaderFile.string(), sf::Shader::Fragment);
+    std::string src = loadShader(mainShaderFile);
+    mainShaderRef->loadFromMemory(src, sf::Shader::Fragment);
     ResInfo mainShaderInfo = {
         mainShaderRef,
         mainShaderFile

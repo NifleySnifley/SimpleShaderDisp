@@ -9,10 +9,6 @@
 //
 // and http://www.iquilezles.org/www/articles/distfunctions2d/distfunctions2d.htm
 
-uniform float iTime;
-uniform vec2 iResolution;
-uniform sampler2D iChannel0;
-
 float sdHorseshoe( in vec2 p, in vec2 c, in float r, in vec2 w )
 {
     p.x = abs(p.x);
