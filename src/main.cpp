@@ -218,8 +218,7 @@ int main(int argc, char const* argv[]) {
             auto rtex = std::make_shared<sf::RenderTexture>();
             rtex->create(winSize.x, winSize.y);
             iRenderBuffers.push_back(rtex);
-        }
-        else {
+        } else {
             TextureResource tex = std::make_shared<sf::Texture>();
             tex->loadFromFile(pth.string());
             // Enable linear interpolation and tiling, usually its useful
@@ -280,6 +279,7 @@ int main(int argc, char const* argv[]) {
     // Main render loop
     while (window.isOpen()) {
         sf::Event event;
+        int curpressedkey = 0;
         while (window.pollEvent(event)) {
             if (event.type == sf::Event::Closed) window.close();
             if (event.type == sf::Event::Resized) {
@@ -302,6 +302,7 @@ int main(int argc, char const* argv[]) {
         mainShaderRef->setUniform("iTimeDelta", deltaClock.restart().asSeconds());
         mainShaderRef->setUniform("iTime", appClock.getElapsedTime().asSeconds());
         mainShaderRef->setUniform("iMouse", sf::Vector2f(sf::Mouse::getPosition(window)));
+        mainShaderRef->setUniform("iKeyboard", );
 
         // Set the channel values
         // If the channel is a shader render them into the render textures

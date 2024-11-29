@@ -1,4 +1,5 @@
-CC = clang++
+CC = gcc
+CXX = g++
 FLAGS = -std=c++20 -g -fopenmp
 LDFLAGS = -I./src -lpthread -lsfml-graphics -lsfml-window -lsfml-system -lX11 -lgomp
 BUILDDIR = ./build
@@ -12,12 +13,12 @@ build: $(BUILDDIR)/swatch
 
 # Link all the objects
 $(BUILDDIR)/swatch: $(OBJECTS)
-	$(CC) $(FLAGS) $^ -o $@ $(LDFLAGS)
+	$(CXX) $(FLAGS) $^ -o $@ $(LDFLAGS)
 
 # Build each source file (compilation unit)
 $(OBJECTS): $(BUILDDIR)/%.o : ./src/%.cpp
 	@mkdir -p $(dir $@)
-	$(CC) -c $(FLAGS) $< -o $@
+	$(CXX) -c $(FLAGS) $< -o $@
 
 # Test with some example shader files
 test: build
